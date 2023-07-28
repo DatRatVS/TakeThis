@@ -1,0 +1,6 @@
+name: TakeThis
+version: '${project.version}'
+main: datrat.takethis.TakeThis
+api-version: '1.20'
+authors: [DatRat]
+description: An highly configurable option to pass your items between sneaking players! Why would I even drop an item now?!
