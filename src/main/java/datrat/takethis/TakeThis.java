@@ -1,7 +1,6 @@
 package datrat.takethis;
 
 import datrat.takethis.event.TakeThisItem;
-import datrat.takethis.handler.Handler;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
