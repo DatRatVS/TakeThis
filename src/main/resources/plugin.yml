@@ -4,3 +4,16 @@ main: datrat.takethis.TakeThis
 api-version: '1.20'
 authors: [DatRat]
 description: An highly configurable option to pass your items between sneaking players! Why would I even drop an item now?!
+
+permissions:
+  takethis.*:
+    description: Gives all permissions from Take This.
+    default: op
+    children:
+      takethis.reload: true
+  takethis.reload:
+    description: Allows the player to reload Take This' variables.
+
+commands:
+  takethis:
+    description: Executes commands from Take This, such as reload.

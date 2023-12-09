@@ -33,6 +33,7 @@ public class Handler {
 
         switch (message) {
             case "theirInventoryIsFull": return placeholderHandler(player, rcplayer, item, config.chatMessages.theirInventoryIsFull);
+            case "theyOptedOut": return placeholderHandler(player, rcplayer, item, config.chatMessages.theyOptedOut);
             case "yourInventoryIsFull": return placeholderHandler(player, rcplayer, item, config.chatMessages.yourInventoryIsFull);
             case "senderGivingTheItem": return placeholderHandler(player, rcplayer, item, config.chatMessages.senderGivingTheItem);
             case "receiverTakingTheItem": return placeholderHandler(player, rcplayer, item, config.chatMessages.receiverTakingTheItem);

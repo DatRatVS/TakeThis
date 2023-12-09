@@ -1,5 +1,6 @@
 package datrat.takethis.event;
 
+import datrat.takethis.TakeThis;
 import datrat.takethis.handler.Handler;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -11,7 +12,10 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.HashMap;
+
 import static datrat.takethis.TakeThis.instance;
+import static datrat.takethis.TakeThis.isOptedOut;
 import static org.bukkit.Bukkit.getLogger;
 import static datrat.takethis.config.SealConfig.config;
 
@@ -22,12 +26,13 @@ public class TakeThisItem implements Listener {
     @EventHandler
     public void passingItem(PlayerInteractEntityEvent event) {
 
-        if (!(event.getRightClicked() instanceof Player)) return;
-        if (event.getHand().equals(EquipmentSlot.OFF_HAND)) return;
+        if (!(event.getRightClicked() instanceof Player)) return; // rcplayer is not a player
+        if (event.getHand().equals(EquipmentSlot.OFF_HAND)) return; // prevent listener to be double triggered cause of off hand
 
         Player player = event.getPlayer();
 
-        if (!(player.isSneaking())) return;
+        if (isOptedOut.containsKey(player.getUniqueId().toString()) && isOptedOut.get(player.getUniqueId().toString())) return; // prevent opted out players to trade
+        if (!(player.isSneaking())) return; // reads if player is sneaking
 
         Player rcplayer = (Player) event.getRightClicked();
 
@@ -36,7 +41,12 @@ public class TakeThisItem implements Listener {
         Bukkit.getScheduler().callSyncMethod(instance, () -> {
 
             ItemStack item = player.getInventory().getItemInMainHand();
-            if (item.getType() == Material.AIR) { return true; }
+            if (item.getType() == Material.AIR) return true;
+
+            if (isOptedOut.containsKey(rcplayer.getUniqueId().toString()) && isOptedOut.get(rcplayer.getUniqueId().toString())) {
+                player.sendMessage(ChatColor.RED + messageHandler.handler(player, rcplayer, item, "theyOptedOut"));
+                return true;
+            }
 
             if (rcplayer.getInventory().firstEmpty() == -1) {
                 player.sendMessage(ChatColor.RED + messageHandler.handler(player, rcplayer, item, "theirInventoryIsFull"));

@@ -45,6 +45,15 @@ public class SealConfigObject {
                  "[ Default: Their inventory is full! ]")
         public String theirInventoryIsFull = "Their inventory is full!";
 
+        @Comment("This is the message that will appear if\n" +
+                "sender has opted-out and does not want to\n" +
+                "be bothered by Take This.\n" +
+                "[ String ( any phrase ) ]\n" +
+                "[ Supports placeholders: ]\n" +
+                "[ ${sender} ${receiver} ]\n" +
+                "[ Default: They are not accepting items! ]")
+        public String theyOptedOut = "They are not accepting items!";
+
         @Comment("This is the message that will appear for\n" +
                  "receiver if their inventory is full.\n" +
                  "[ String ( any phrase ) ]\n" +
