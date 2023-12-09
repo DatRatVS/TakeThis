@@ -26,8 +26,8 @@ public class SealConfigObject {
         @Comment("Change the value (in seconds)\n" +
                  "of the cooldown.\n" +
                  "[ int ( any integral number ) ]\n"+
-                 "[ Default: 1 ]")
-        public int cooldownValue = 1;
+                 "[ Default: 3 ]")
+        public int cooldownValue = 3;
 
     }
 
@@ -84,9 +84,9 @@ public class SealConfigObject {
                  "sender is in cooldown.\n" +
                  "[ String ( any phrase ) ]\n" +
                  "[ Supports placeholders: ]\n" +
-                 "[ {cooldownSeconds} ]\n" +
-                 "[ Default: Wait ${cooldownSeconds}s before you can share another item! ]")
-        public String cooldownMessage = "Wait ${cooldownSeconds}s before you can share another item!";
+                 "[ {cooldown} ]\n" +
+                 "[ Default: Wait ${cooldown}s before you can give another item! ]")
+        public String cooldownMessage = "Wait ${cooldown}s before you can give another item!";
 
 
         @Comment("Toggle if the console logging\n" +

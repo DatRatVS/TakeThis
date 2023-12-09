@@ -13,15 +13,14 @@ public class Handler {
 
     public String treatedMessage;
 
-    public String placeholderHandler(Player player, Player rcplayer, ItemStack item, String placeholderMessage) {
+    public String placeholderHandler(Player player, Player rcplayer, ItemStack item, String placeholderMessage, long cooldownLeft) {
 
         Map<String, String> data = new HashMap<String, String>();
         data.put("sender", player.getName());
         data.put("receiver", rcplayer.getName());
         data.put("quantity", String.valueOf(item.getAmount()));
         data.put("item_type", String.valueOf(item.getType()));
-
-        data.put("cooldown", "WORK IN PROGRESS.");
+        data.put("cooldown", String.valueOf(cooldownLeft));
 
         treatedMessage = StringSubstitutor.replace(placeholderMessage, data);
 
@@ -29,16 +28,16 @@ public class Handler {
 
     }
 
-    public String handler(Player player, Player rcplayer, ItemStack item, String message) {
+    public String handler(Player player, Player rcplayer, ItemStack item, String message, long cooldownLeft) {
 
         switch (message) {
-            case "theirInventoryIsFull": return placeholderHandler(player, rcplayer, item, config.chatMessages.theirInventoryIsFull);
-            case "theyOptedOut": return placeholderHandler(player, rcplayer, item, config.chatMessages.theyOptedOut);
-            case "yourInventoryIsFull": return placeholderHandler(player, rcplayer, item, config.chatMessages.yourInventoryIsFull);
-            case "senderGivingTheItem": return placeholderHandler(player, rcplayer, item, config.chatMessages.senderGivingTheItem);
-            case "receiverTakingTheItem": return placeholderHandler(player, rcplayer, item, config.chatMessages.receiverTakingTheItem);
-            case "cooldownMessage": return placeholderHandler(player, rcplayer, item, config.chatMessages.cooldownMessage);
-            case "consoleLog": return placeholderHandler(player, rcplayer, item, config.chatMessages.consoleLog);
+            case "theirInventoryIsFull": return placeholderHandler(player, rcplayer, item, config.chatMessages.theirInventoryIsFull, cooldownLeft);
+            case "theyOptedOut": return placeholderHandler(player, rcplayer, item, config.chatMessages.theyOptedOut, cooldownLeft);
+            case "yourInventoryIsFull": return placeholderHandler(player, rcplayer, item, config.chatMessages.yourInventoryIsFull, cooldownLeft);
+            case "senderGivingTheItem": return placeholderHandler(player, rcplayer, item, config.chatMessages.senderGivingTheItem, cooldownLeft);
+            case "receiverTakingTheItem": return placeholderHandler(player, rcplayer, item, config.chatMessages.receiverTakingTheItem, cooldownLeft);
+            case "cooldownMessage": return placeholderHandler(player, rcplayer, item, config.chatMessages.cooldownMessage, cooldownLeft);
+            case "consoleLog": return placeholderHandler(player, rcplayer, item, config.chatMessages.consoleLog, cooldownLeft);
         }
 
         return null;

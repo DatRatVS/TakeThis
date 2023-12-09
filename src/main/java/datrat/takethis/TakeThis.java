@@ -7,7 +7,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -18,6 +17,7 @@ public final class TakeThis extends JavaPlugin {
     public static TakeThis instance;
 
     public static HashMap<String, Boolean> isOptedOut = new HashMap<>();
+    public static HashMap<String, Long> cooldown = new HashMap<>();
 
     @Override
     public void onEnable() {
