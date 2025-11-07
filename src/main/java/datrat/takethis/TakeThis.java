@@ -3,64 +3,127 @@ package datrat.takethis;
 import datrat.takethis.command.ReloadCommand;
 import datrat.takethis.command.ReloadCommandTabCompleter;
 import datrat.takethis.event.TakeThisItem;
-import org.bukkit.Bukkit;
+import datrat.takethis.util.VersionSupport;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static datrat.takethis.config.SealConfig.loadConfig;
 
 public final class TakeThis extends JavaPlugin {
 
-    public static TakeThis instance;
+    private static TakeThis instance;
 
-    public static HashMap<String, Boolean> isOptedOut = new HashMap<>();
-    public static HashMap<String, Long> cooldown = new HashMap<>();
+    private final Map<UUID, Boolean> optOutStates = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
+
+    public static TakeThis getInstance() {
+        return instance;
+    }
 
     @Override
     public void onEnable() {
 
         instance = this;
 
+        VersionSupport.logCompatibility(this);
+
         loadConfig();
         getLogger().info("Take This has loaded Seal Config!");
 
-        Bukkit.getServer().getPluginManager().registerEvents(new TakeThisItem(), this);
-        getLogger().info("Take This has registered events!");
-
-        Objects.requireNonNull(this.getCommand("takethis")).setExecutor(new ReloadCommand());
-        Objects.requireNonNull(this.getCommand("takethis")).setTabCompleter(new ReloadCommandTabCompleter());
-        getLogger().info("Take This has registered commands!");
+        registerEventListeners();
+        registerCommands();
 
         this.saveDefaultConfig();
-        if (this.getConfig().contains("data")) {
-            this.restoreHashMap();
-            this.getConfig().set("data", null);
-            this.saveConfig();
-        }
-        getLogger().info("Take This has gotten opted-in and outs!");
+        restoreOptOutStates();
 
         getLogger().warning("Take This has fully initialized!");
     }
 
     @Override
     public void onDisable() {
-        if (!isOptedOut.isEmpty()) this.saveHashMap();
-    }
-
-    public void saveHashMap() {
-        for (Map.Entry<String, Boolean> entry : isOptedOut.entrySet()) {
-            this.getConfig().set("data." + entry.getKey(), entry.getValue());
+        if (!optOutStates.isEmpty()) {
+            saveOptOutStates();
         }
-        this.saveConfig();
     }
 
-    public void restoreHashMap() {
-        Objects.requireNonNull(this.getConfig().getConfigurationSection("data")).getKeys(false).forEach(key -> {
-            isOptedOut.put(key, (Boolean) this.getConfig().get("data." + key));
-        });
+    private void registerEventListeners() {
+        getServer().getPluginManager().registerEvents(new TakeThisItem(this), this);
+        getLogger().info("Take This has registered events!");
+    }
+
+    private void registerCommands() {
+        PluginCommand takethis = getCommand("takethis");
+        if (takethis == null) {
+            getLogger().severe("Unable to register 'takethis' command. Check plugin.yml configuration.");
+            return;
+        }
+
+        takethis.setExecutor(new ReloadCommand(this));
+        takethis.setTabCompleter(new ReloadCommandTabCompleter());
+        getLogger().info("Take This has registered commands!");
+    }
+
+    public void saveOptOutStates() {
+        getConfig().set("data", null);
+
+        if (optOutStates.isEmpty()) {
+            saveConfig();
+            return;
+        }
+
+        optOutStates.forEach((uuid, optedOut) -> getConfig().set("data." + uuid, optedOut));
+        saveConfig();
+    }
+
+    private void restoreOptOutStates() {
+        ConfigurationSection dataSection = getConfig().getConfigurationSection("data");
+        if (dataSection == null) {
+            getLogger().info("Take This has no opted-in and out data to restore.");
+            return;
+        }
+
+        optOutStates.clear();
+        for (String key : dataSection.getKeys(false)) {
+            try {
+                UUID uuid = UUID.fromString(key);
+                boolean optedOut = dataSection.getBoolean(key);
+                optOutStates.put(uuid, optedOut);
+            } catch (IllegalArgumentException ex) {
+                getLogger().warning("Failed to parse UUID '" + key + "' while restoring opt-out data.");
+            }
+        }
+
+        getConfig().set("data", null);
+        saveConfig();
+        getLogger().info("Take This has restored opted-in and outs!");
+    }
+
+    public boolean hasOptOutRecord(UUID uuid) {
+        return optOutStates.containsKey(uuid);
+    }
+
+    public boolean isOptedOut(UUID uuid) {
+        return optOutStates.getOrDefault(uuid, false);
+    }
+
+    public void setOptOut(UUID uuid, boolean optedOut) {
+        optOutStates.put(uuid, optedOut);
+    }
+
+    public long getCooldownExpiry(UUID uuid) {
+        return cooldowns.getOrDefault(uuid, 0L);
+    }
+
+    public void setCooldownExpiry(UUID uuid, long expiryTimestamp) {
+        cooldowns.put(uuid, expiryTimestamp);
+    }
+
+    public void clearCooldown(UUID uuid) {
+        cooldowns.remove(uuid);
     }
 }
-

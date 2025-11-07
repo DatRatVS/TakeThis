@@ -6,7 +6,7 @@
 
     <groupId>datrat</groupId>
     <artifactId>takethis</artifactId>
-    <version>1.20.x-1.0</version>
+    <version>${project.version}</version>
     <packaging>jar</packaging>
 
     <name>TakeThis</name>
@@ -14,8 +14,10 @@
     <description>Shift + Right Click to pass your items between players! Why would I even drop an item now?!
     </description>
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>11</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <spigot-api.version>1.20.1-R0.1-SNAPSHOT</spigot-api.version>
+        <project.version>1.20.x-1.1</project.version>
     </properties>
 
     <build>
@@ -73,7 +75,7 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.20.1-R0.1-SNAPSHOT</version>
+            <version>${spigot-api.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -87,4 +89,14 @@
             <version>1.9</version>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>mc-1.21</id>
+            <properties>
+                <spigot-api.version>1.21.1-R0.1-SNAPSHOT</spigot-api.version>
+                <project.version>1.21.x-1.1</project.version>
+            </properties>
+        </profile>
+    </profiles>
 </project>

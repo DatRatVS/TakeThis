@@ -1,56 +1,94 @@
 package datrat.takethis.command;
 
+import datrat.takethis.TakeThis;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.UUID;
+
+import static datrat.takethis.config.SealConfig.config;
 import static datrat.takethis.config.SealConfig.reloadConfig;
-import static datrat.takethis.TakeThis.isOptedOut;
 
 public class ReloadCommand implements CommandExecutor {
 
+    private final TakeThis plugin;
+
+    public ReloadCommand(TakeThis plugin) {
+        this.plugin = plugin;
+    }
+
+    @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (cmd.getName().equalsIgnoreCase("takethis")) {
-            if (args[0].equalsIgnoreCase("reload")) {
-                if (sender instanceof Player) if (!(sender.hasPermission("takethis.reload"))) return true;
+        if (!cmd.getName().equalsIgnoreCase("takethis")) {
+            return false;
+        }
 
-                sender.sendMessage("[Take This] - Reloading Take This' Variables.");
-
-                reloadConfig();
-
-                sender.sendMessage("[Take This] - Reload done.");
-                return true;
-
-            } else if (args[0].equalsIgnoreCase("opt")) {
-
-                if (!(sender instanceof Player)) {
-                    sender.sendMessage("Consoles aren't able to use this command.");
-                    return true;
-                }
-
-                Player player = (Player) sender;
-
-                if (isOptedOut.containsKey(player.getUniqueId().toString()) && isOptedOut.get(player.getUniqueId().toString())) {
-                    isOptedOut.replace(player.getUniqueId().toString(), false);
-                    player.sendMessage("[Take This] - You have now opted-in.");
-                    return true;
-                } else if (isOptedOut.containsKey(player.getUniqueId().toString()) && !isOptedOut.get(player.getUniqueId().toString())) {
-                    isOptedOut.replace(player.getUniqueId().toString(), true);
-                    player.sendMessage("[Take This] - You have now opted-out.");
-                    return true;
-                }
-
-                isOptedOut.put(player.getUniqueId().toString(), true);
-                player.sendMessage("[Take This] - You have now opted-out of the item exchanging system.");
-                return true;
-
-            } else {
-                sender.sendMessage("[Take This] - Usage: /takethis (subcommand)");
-            }
+        if (args.length == 0) {
+            sendMessage(sender, config.commandMessages.usage, config.commandMessages.usageColor);
             return true;
+        }
+
+        if ("reload".equalsIgnoreCase(args[0])) {
+            return handleReload(sender);
+        }
+
+        if ("opt".equalsIgnoreCase(args[0])) {
+            return handleOpt(sender);
+        }
+
+        sendMessage(sender, config.commandMessages.usage, config.commandMessages.usageColor);
+        return true;
+    }
+
+    private boolean handleReload(CommandSender sender) {
+        if (sender instanceof Player && !sender.hasPermission("takethis.reload")) {
+            sendMessage(sender, config.commandMessages.noPermission, config.commandMessages.noPermissionColor);
+            return true;
+        }
+
+        sendMessage(sender, config.commandMessages.reloadStart, config.commandMessages.reloadStartColor);
+        reloadConfig();
+        sendMessage(sender, config.commandMessages.reloadComplete, config.commandMessages.reloadCompleteColor);
+        return true;
+    }
+
+    private boolean handleOpt(CommandSender sender) {
+        if (!(sender instanceof Player)) {
+            sendMessage(sender, config.commandMessages.consoleNotAllowed, config.commandMessages.consoleNotAllowedColor);
+            return true;
+        }
+
+        Player player = (Player) sender;
+        UUID playerId = player.getUniqueId();
+
+        if (plugin.hasOptOutRecord(playerId) && plugin.isOptedOut(playerId)) {
+            plugin.setOptOut(playerId, false);
+            sendMessage(player, config.commandMessages.optedIn, config.commandMessages.optedInColor);
+        } else {
+            plugin.setOptOut(playerId, true);
+            sendMessage(player, config.commandMessages.optedOut, config.commandMessages.optedOutColor);
         }
         return true;
     }
 
+    private void sendMessage(CommandSender sender, String message, String colorName) {
+        ChatColor prefixColor = parseColor(config.commandMessages.prefixColor);
+        ChatColor messageColor = parseColor(colorName);
+        
+        sender.sendMessage(prefixColor + config.commandMessages.prefix + " " + messageColor + message);
+    }
+
+    private ChatColor parseColor(String colorName) {
+        if (colorName == null) {
+            return ChatColor.WHITE;
+        }
+        try {
+            return ChatColor.valueOf(colorName.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ChatColor.WHITE;
+        }
+    }
 }

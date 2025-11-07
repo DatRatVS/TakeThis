@@ -1,8 +1,9 @@
 package datrat.takethis.event;
 
+import datrat.takethis.TakeThis;
 import datrat.takethis.handler.Handler;
+import datrat.takethis.handler.Handler.MessageType;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -11,71 +12,76 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.UUID;
 
-import static datrat.takethis.TakeThis.instance;
-import static datrat.takethis.TakeThis.isOptedOut;
-import static datrat.takethis.TakeThis.cooldown ;
-import static org.bukkit.Bukkit.getLogger;
 import static datrat.takethis.config.SealConfig.config;
 
 public class TakeThisItem implements Listener {
 
-    Handler messageHandler = new Handler();
+    private final TakeThis plugin;
+    private final Handler messageHandler = new Handler();
+
+    public TakeThisItem(TakeThis plugin) {
+        this.plugin = plugin;
+    }
 
     @EventHandler
     public void passingItem(PlayerInteractEntityEvent event) {
 
         if (!(event.getRightClicked() instanceof Player)) return;
-        if (event.getHand().equals(EquipmentSlot.OFF_HAND)) return;
+        if (event.getHand() == EquipmentSlot.OFF_HAND) return;
 
         Player player = event.getPlayer();
+        UUID playerId = player.getUniqueId();
 
-        if (isOptedOut.containsKey(player.getUniqueId().toString()) && isOptedOut.get(player.getUniqueId().toString())) return;
-        if (!(player.isSneaking())) return;
+        if (plugin.isOptedOut(playerId)) return;
+        if (!player.isSneaking()) return;
 
         Player rcplayer = (Player) event.getRightClicked();
+        UUID receiverId = rcplayer.getUniqueId();
 
-        if (config.receiverSneaking) if (!(rcplayer.isSneaking())) return;
+        if (config.receiverSneaking && !rcplayer.isSneaking()) return;
 
-        Bukkit.getScheduler().callSyncMethod(instance, () -> {
+        Bukkit.getScheduler().runTask(plugin, () -> {
 
             ItemStack item = player.getInventory().getItemInMainHand();
-            if (item.getType() == Material.AIR) return true;
+            if (item.getType() == Material.AIR) return;
 
             if (config.cooldown.isCooldownActive) {
 
-                if (cooldown.containsKey(player.getUniqueId().toString()) && cooldown.get(player.getUniqueId().toString()) > System.currentTimeMillis()) {
-                    long timeLeft = (cooldown.get(player.getUniqueId().toString()) - System.currentTimeMillis()) / 1000;
-                    player.sendMessage(ChatColor.RED + messageHandler.handler(player, rcplayer, item, "cooldownMessage", timeLeft));
-                    return true;
+                long cooldownExpiry = plugin.getCooldownExpiry(playerId);
+                long now = System.currentTimeMillis();
+                if (cooldownExpiry > now) {
+                    long timeLeft = (cooldownExpiry - now) / 1000;
+                    player.sendMessage(messageHandler.format(player, rcplayer, item, MessageType.COOLDOWN_MESSAGE, timeLeft));
+                    return;
                 }
 
-                cooldown.put(player.getUniqueId().toString(), System.currentTimeMillis() + (config.cooldown.cooldownValue * 1000L));
+                plugin.setCooldownExpiry(playerId, now + (config.cooldown.cooldownValue * 1000L));
 
             }
 
-            if (isOptedOut.containsKey(rcplayer.getUniqueId().toString()) && isOptedOut.get(rcplayer.getUniqueId().toString())) {
-                player.sendMessage(ChatColor.RED + messageHandler.handler(player, rcplayer, item, "theyOptedOut", 0));
-                return true;
+            if (plugin.isOptedOut(receiverId)) {
+                player.sendMessage(messageHandler.format(player, rcplayer, item, MessageType.THEY_OPTED_OUT, 0));
+                return;
             }
 
             if (rcplayer.getInventory().firstEmpty() == -1) {
-                player.sendMessage(ChatColor.RED + messageHandler.handler(player, rcplayer, item, "theirInventoryIsFull", 0));
-                rcplayer.sendMessage(ChatColor.RED + messageHandler.handler(player, rcplayer, item, "yourInventoryIsFull", 0));
-                return true;
+                player.sendMessage(messageHandler.format(player, rcplayer, item, MessageType.THEIR_INVENTORY_IS_FULL, 0));
+                rcplayer.sendMessage(messageHandler.format(player, rcplayer, item, MessageType.YOUR_INVENTORY_IS_FULL, 0));
+                return;
             }
 
             player.getInventory().setItemInMainHand(null);
             rcplayer.getInventory().addItem(item);
 
-            player.sendMessage(ChatColor.LIGHT_PURPLE + messageHandler.handler(player, rcplayer, item, "senderGivingTheItem", 0));
-            rcplayer.sendMessage(ChatColor.LIGHT_PURPLE + messageHandler.handler(player, rcplayer, item, "receiverTakingTheItem", 0));
+            player.sendMessage(messageHandler.format(player, rcplayer, item, MessageType.SENDER_GIVING_THE_ITEM, 0));
+            rcplayer.sendMessage(messageHandler.format(player, rcplayer, item, MessageType.RECEIVER_TAKING_THE_ITEM, 0));
 
             if (config.chatMessages.shouldConsoleLog) {
-                getLogger().info("[TakeThis] " + messageHandler.handler(player, rcplayer, item, "consoleLog", 0));
+                plugin.getLogger().info("[TakeThis] " + messageHandler.format(player, rcplayer, item, MessageType.CONSOLE_LOG, 0));
             }
 
-            return true;
         });
     }
 
